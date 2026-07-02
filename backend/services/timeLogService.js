@@ -7,7 +7,7 @@ class TimeLogService {
   async createTimeLog(user, companyId, data, files) {
     const { job, date, description, hours, employeeId } = data;
     const role = normalizeRole(user.role);
-    const employee = (employeeId && ['super admin', 'admin'].includes(role)) ? employeeId : user.id || user._id;
+    const employee = (employeeId && ['superadmin', 'admin'].includes(role)) ? employeeId : user.id || user._id;
 
     const estDate = moment.tz(date, TIMEZONE).startOf('day').toDate();
 
@@ -35,7 +35,7 @@ class TimeLogService {
   async getEmployeeTimeLogs(user, companyId, query) {
     const { date, userId } = query; 
     const roleKey = normalizeRole(user.role);
-    const employee = (userId && ['super admin', 'admin', 'manager'].includes(roleKey)) ? userId : user.id || user._id;
+    const employee = (userId && ['superadmin', 'admin', 'manager'].includes(roleKey)) ? userId : user.id || user._id;
 
     const dbQuery = { employee, company: companyId };
     if (date) {

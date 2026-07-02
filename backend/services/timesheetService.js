@@ -14,7 +14,7 @@ class TimesheetService {
     let employee = user.id || user._id;
     let employeeName = user.name;
 
-    if (employeeId && ['super admin', 'admin'].includes(role)) {
+    if (employeeId && ['superadmin', 'admin'].includes(role)) {
         const targetUser = await User.findOne({ _id: employeeId, company: companyId });
         if (!targetUser) throw new BadRequestError("Target employee not found");
         employee = targetUser._id;
@@ -80,10 +80,21 @@ class TimesheetService {
     let dbQuery = { date: { $gte: startDate, $lte: endDate }, company: companyId };
     const roleKey = normalizeRole(user.role);
 
-    if (userId && ['super admin', 'admin', 'manager'].includes(roleKey)) {
-        dbQuery.employee = userId;
+    if (userId) {
+        if (['superadmin', 'admin', 'manager'].includes(roleKey)) {
+            dbQuery.employee = userId;
+        } else {
+            dbQuery.employee = user.id || user._id;
+        }
     } else {
-        dbQuery.employee = user.id || user._id;
+        if (roleKey === 'manager' || roleKey === 'admin') {
+            const subordinates = await User.find({ reportsTo: user.id || user._id }).select('_id');
+            const validIds = subordinates.map(u => u._id);
+            validIds.push(user.id || user._id);
+            dbQuery.employee = { $in: validIds };
+        } else if (roleKey !== 'superadmin' && roleKey !== 'hr') {
+            dbQuery.employee = user.id || user._id;
+        }
     }
 
     const timesheets = await Timesheet.find(dbQuery)
@@ -131,7 +142,7 @@ class TimesheetService {
        } else {
          query.employee = { $in: validIds };
        }
-    } else if (role !== 'super admin' && role !== 'hr') {
+    } else if (role !== 'superadmin' && role !== 'hr') {
        query.employee = user.id || user._id;
     }
 
