@@ -34,7 +34,7 @@ export const injectStore = (_store) => {
 
 
 const api = axios.create({
- baseURL: "/api/v1",
+ baseURL: "http://localhost:4000/api/v1",
  timeout: 15000,
  withCredentials: true
 });
