@@ -48,17 +48,23 @@ const LiveTimer = ({ startTime }) => {
 
 // --- MAIN COMPONENT ---
 const AdminAttendance = () => {
- const [summaryData, setSummaryData] = useState({ present: [], absent: [], onLeave: [], counts: { present: 0, absent: 0, onLeave: 0, total: 0 } });
+  const [summaryData, setSummaryData] = useState({ present: [], absent: [], halfDay: [], onLeave: [], counts: { present: 0, absent: 0, halfDay: 0, onLeave: 0, total: 0 } });
  const [loading, setLoading] = useState(true);
  const [searchTerm, setSearchTerm] = useState("");
  const [deptFilter, setDeptFilter] = useState("all");
- const [filterDate, setFilterDate] = useState(() => {
- const savedDate = localStorage.getItem('admin_attendance_date');
- return savedDate ? new Date(savedDate) : new Date();
- });
- const [activeTab, setActiveTab] = useState(() => {
- return localStorage.getItem('admin_attendance_tab') || "present";
- });
+const [filterDate, setFilterDate] = useState(() => {
+  const savedDate = localStorage.getItem('admin_attendance_date');
+  if (savedDate) {
+    const parsed = new Date(savedDate);
+    if (!isNaN(parsed.getTime())) return parsed;
+  }
+  return new Date();
+});
+const [activeTab, setActiveTab] = useState(() => {
+  const savedTab = localStorage.getItem('admin_attendance_tab');
+  const validTabs = ['present', 'half-day', 'absent', 'leave'];
+  return (savedTab && validTabs.includes(savedTab)) ? savedTab : "present";
+});
  const [allUsers, setAllUsers] = useState([]);
  const [isAddAttendanceOpen, setIsAddAttendanceOpen] = useState(false);
 
@@ -70,19 +76,24 @@ const AdminAttendance = () => {
  // Permission State
  const [currentUserRole, setCurrentUserRole] = useState("");
 
- const fetchSummary = async (date) => {
- setLoading(true);
- try {
- const dateStr = date.toISOString().split('T')[0];
- const res = await api.get(`/timetrackers/admin-summary?date=${dateStr}`);
- setSummaryData(res.data);
- } catch (error) {
- console.error("Fetch Summary Error:", error);
- toast.error("Failed to load attendance summary");
- } finally {
- setLoading(false);
- }
- };
+const fetchSummary = async (date) => {
+  if (!date || isNaN(date.getTime())) {
+    toast.error("Invalid date selected");
+    setLoading(false);
+    return;
+  }
+  setLoading(true);
+  try {
+  const dateStr = date.toISOString().split('T')[0];
+  const res = await api.get(`/timetrackers/admin-summary?date=${dateStr}`);
+  setSummaryData(res.data);
+  } catch (error) {
+  console.error("Fetch Summary Error:", error);
+  toast.error("Failed to load attendance summary");
+  } finally {
+  setLoading(false);
+  }
+  };
 
  // --- FETCH USER INFO ON MOUNT ---
  useEffect(() => {
@@ -279,14 +290,15 @@ const AdminAttendance = () => {
  }
  };
 
- const getActiveTabData = () => {
- switch (activeTab) {
- case "present": return summaryData.present.filter(log => log.status !== 'Absent' && log.status !== 'On Leave' && log.status !== 'Leave');
- case "absent": return summaryData.absent;
- case "leave": return summaryData.onLeave;
- default: return [];
- }
- };
+  const getActiveTabData = () => {
+  switch (activeTab) {
+  case "present": return summaryData.present.filter(log => log.status !== 'Absent' && log.status !== 'On Leave' && log.status !== 'Leave');
+  case "half-day": return summaryData.halfDay;
+  case "absent": return summaryData.absent;
+  case "leave": return summaryData.onLeave;
+  default: return [];
+  }
+  };
 
  const activeTabLogs = getActiveTabData().filter((log) => {
  const employeeName = log.user?.name || "Unknown";
@@ -447,56 +459,63 @@ const AdminAttendance = () => {
  </div>
  </FilterRow>
  }
- topWidgets={
- <div className="grid grid-cols-4 gap-0 glass-card p-0 overflow-hidden divide-x divide-slate-100 dark:divide-slate-700/50">
- <div className="px-4 py-4 flex flex-col justify-center text-center bg-blue-50 dark:bg-blue-900/10">
- <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">TOTAL</p>
- <p className="text-2xl font-black text-blue-700 dark:text-blue-400">{summaryData.counts.total}</p>
- </div>
- <div
- onClick={() => { setActiveTab("present"); localStorage.setItem('admin_attendance_tab', 'present'); }}
- className={`px-4 py-4 flex flex-col justify-center text-center cursor-pointer transition-all ${activeTab === 'present' ? 'bg-emerald-100 dark:bg-emerald-900/40/50 dark:bg-emerald-900/30' : 'bg-emerald-50 dark:bg-emerald-900/30/30 hover:bg-emerald-50 dark:bg-emerald-900/10 dark:hover:bg-emerald-900/20'}`}
- >
- <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">PRESENT</p>
- <p className="text-2xl font-black text-emerald-700 dark:text-emerald-400">{summaryData.counts.present}</p>
- </div>
- <div
- onClick={() => { setActiveTab("absent"); localStorage.setItem('admin_attendance_tab', 'absent'); }}
- className={`px-4 py-4 flex flex-col justify-center text-center cursor-pointer transition-all ${activeTab === 'absent' ? 'bg-rose-100 dark:bg-rose-900/40/50 dark:bg-rose-900/30' : 'bg-rose-50 dark:bg-rose-900/30/30 hover:bg-rose-50 dark:bg-rose-900/10 dark:hover:bg-rose-900/20'}`}
- >
- <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-1">ABSENT</p>
- <p className="text-2xl font-black text-rose-700 dark:text-rose-400">{summaryData.counts.absent}</p>
- </div>
- <div
- onClick={() => { setActiveTab("leave"); localStorage.setItem('admin_attendance_tab', 'leave'); }}
- className={`px-4 py-4 flex flex-col justify-center text-center cursor-pointer transition-all ${activeTab === 'leave' ? 'bg-amber-100 dark:bg-amber-900/40/50 dark:bg-amber-900/30' : 'bg-amber-50 dark:bg-amber-900/30/30 hover:bg-amber-50 dark:bg-amber-900/10 dark:hover:bg-amber-900/20'}`}
- >
- <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">ON LEAVE</p>
- <p className="text-2xl font-black text-amber-700 dark:text-amber-400">{summaryData.counts.onLeave}</p>
- </div>
- </div>
- }
+  topWidgets={
+  <div className="grid grid-cols-4 gap-0 glass-card p-0 overflow-hidden divide-x divide-slate-100 dark:divide-slate-700/50">
+  <div className="px-4 py-4 flex flex-col justify-center text-center bg-blue-50 dark:bg-blue-900/10">
+  <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">TOTAL</p>
+  <p className="text-2xl font-black text-blue-700 dark:text-blue-400">{summaryData.counts.total}</p>
+  </div>
+  <div
+  onClick={() => { setActiveTab("present"); localStorage.setItem('admin_attendance_tab', 'present'); }}
+  className={`px-4 py-4 flex flex-col justify-center text-center cursor-pointer transition-all ${activeTab === 'present' ? 'bg-emerald-100 dark:bg-emerald-900/40/50 dark:bg-emerald-900/30' : 'bg-emerald-50 dark:bg-emerald-900/30/30 hover:bg-emerald-50 dark:bg-emerald-900/10 dark:hover:bg-emerald-900/20'}`}
+  >
+  <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">PRESENT</p>
+  <p className="text-2xl font-black text-emerald-700 dark:text-emerald-400">{summaryData.counts.present}</p>
+  </div>
+  <div
+  onClick={() => { setActiveTab("half-day"); localStorage.setItem('admin_attendance_tab', 'half-day'); }}
+  className={`px-4 py-4 flex flex-col justify-center text-center cursor-pointer transition-all ${activeTab === 'half-day' ? 'bg-amber-100 dark:bg-amber-900/40/50 dark:bg-amber-900/30' : 'bg-amber-50 dark:bg-amber-900/30/30 hover:bg-amber-50 dark:bg-amber-900/10 dark:hover:bg-amber-900/20'}`}
+  >
+  <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">HALF DAY</p>
+  <p className="text-2xl font-black text-amber-700 dark:text-amber-400">{summaryData.counts.halfDay}</p>
+  </div>
+  <div
+  onClick={() => { setActiveTab("absent"); localStorage.setItem('admin_attendance_tab', 'absent'); }}
+  className={`px-4 py-4 flex flex-col justify-center text-center cursor-pointer transition-all ${activeTab === 'absent' ? 'bg-rose-100 dark:bg-rose-900/40/50 dark:bg-rose-900/30' : 'bg-rose-50 dark:bg-rose-900/30/30 hover:bg-rose-50 dark:bg-rose-900/10 dark:hover:bg-rose-900/20'}`}
+  >
+  <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-1">ABSENT</p>
+  <p className="text-2xl font-black text-rose-700 dark:text-rose-400">{summaryData.counts.absent}</p>
+  </div>
+  <div
+  onClick={() => { setActiveTab("leave"); localStorage.setItem('admin_attendance_tab', 'leave'); }}
+  className={`px-4 py-4 flex flex-col justify-center text-center cursor-pointer transition-all ${activeTab === 'leave' ? 'bg-amber-100 dark:bg-amber-900/40/50 dark:bg-amber-900/30' : 'bg-amber-50 dark:bg-amber-900/30/30 hover:bg-amber-50 dark:bg-amber-900/10 dark:hover:bg-amber-900/20'}`}
+  >
+  <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">ON LEAVE</p>
+  <p className="text-2xl font-black text-amber-700 dark:text-amber-400">{summaryData.counts.onLeave}</p>
+  </div>
+  </div>
+  }
  isCard={false}
  >
- {/* Tab Buttons */}
- <div className="flex gap-2 mb-4">
- {["present", "absent", "leave"].map((t) => (
- <button
- key={t}
- onClick={() => {
- setActiveTab(t);
- localStorage.setItem('admin_attendance_tab', t);
- }}
- className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${
- activeTab === t 
- ? "bg-brand-primary text-white border-brand-primary shadow-lg shadow-brand-primary/20" 
- : "bg-surface text-muted border-border-subtle hover:border-subtle"
- }`}
- >
- {t}
- </button>
- ))}
- </div>
+  {/* Tab Buttons */}
+  <div className="flex gap-2 mb-4">
+  {["present", "half-day", "absent", "leave"].map((t) => (
+  <button
+  key={t}
+  onClick={() => {
+  setActiveTab(t);
+  localStorage.setItem('admin_attendance_tab', t);
+  }}
+  className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${
+  activeTab === t 
+  ? "bg-brand-primary text-white border-brand-primary shadow-lg shadow-brand-primary/20" 
+  : "bg-surface text-muted border-border-subtle hover:border-subtle"
+  }`}
+  >
+  {t === "half-day" ? "Half Day" : t}
+  </button>
+  ))}
+  </div>
  <div className="glass-card p-0 overflow-hidden">
  <TableWithPagination
  columns={attendanceColumns}
@@ -567,13 +586,11 @@ const AdminAttendance = () => {
             value={editFormData.status}
             onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
           >
-            <option value="Present">Present</option>
-            <option value="Half Day">Half Day</option>
-            <option value="Absent">Absent</option>
-            <option value="Late">Late</option>
-            <option value="Leave">Leave</option>
-            <option value="On Leave">On Leave</option>
-          </select>
+        <option value="Present">Present</option>
+        <option value="Half Day">Half Day</option>
+        <option value="Absent">Absent</option>
+        <option value="On Leave">On Leave</option>
+      </select>
         </div>
       </div>
     </GlassModal>

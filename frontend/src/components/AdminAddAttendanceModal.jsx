@@ -155,22 +155,21 @@ export default function AdminAddAttendanceModal({ open, onClose, onSuccess, allU
  />
  </div>
 
- <div className="relative z-20">
- <ModernSelect
- label="Status"
- name="status"
- value={formData.status}
- onChange={(e) => setFormData({ ...formData, status: e.target.value })}
- options={[
- { value: "Present", label: "Present" },
- { value: "Half Day", label: "Half Day" },
- { value: "Absent", label: "Absent" },
- { value: "Late", label: "Late" },
- { value: "On Leave", label: "On Leave" }
- ]}
- className="w-full"
- />
- </div>
+  <div className="relative z-20">
+  <ModernSelect
+  label="Status"
+  name="status"
+  value={formData.status}
+  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+  options={[
+  { value: "Present", label: "Present" },
+  { value: "Half Day", label: "Half Day" },
+  { value: "Absent", label: "Absent" },
+  { value: "On Leave", label: "On Leave" }
+  ]}
+  className="w-full"
+  />
+  </div>
  
  <div className="relative z-10">
  <label className="block text-[10px] font-black text-muted dark:text-muted mb-2 uppercase tracking-widest">

@@ -30,7 +30,7 @@ const NotificationModal = ({ isOpen, onClose }) => {
     <GlassModal
       isOpen={isOpen}
       onClose={onClose}
-      title="Notifications"
+      title="Notification"
       maxWidth="max-w-md"
     >
       <div className="flex-1 overflow-y-auto space-y-3">

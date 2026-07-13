@@ -10,13 +10,13 @@ export default function NotificationItem({ notif, onClick, isDense = false, chil
  aria-label={`${notif.isRead ? 'Read' : 'Unread'} notification: ${notif.title}`}
  className={`group relative flex items-start gap-4 cursor-pointer transition-all duration-300 border-l-4 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:z-10 ${
  isDense ? 'px-4 py-3' : 'px-6 py-5'
- } ${
- isSelected
- ? 'bg-teal-50 dark:bg-teal-900/30/40 border-l-teal-600'
- : !notif.isRead 
- ? 'bg-surface border-l-teal-400/30 hover:bg-app' 
- : 'bg-surface border-l-transparent hover:bg-app'
- }`}
+  } ${
+  isSelected
+  ? 'bg-teal-50 dark:bg-teal-900/30/40 border-l-teal-600'
+  : !notif.isRead 
+  ? 'bg-surface border-l-teal-400/30 hover:bg-app' 
+  : 'bg-surface border-l-transparent hover:bg-app'
+  }`} />
  >
  {/* Icon Container */}
  <div className={`shrink-0 flex items-center justify-center rounded-2xl shadow-sm border transition-all duration-300 group-hover:scale-110 ${

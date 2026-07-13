@@ -267,7 +267,7 @@ class TimeTrackerService {
     const targetDateMoment = dateStr ? moment.tz(dateStr, TIMEZONE) : nowEST;
     
     if (targetDateMoment.isAfter(nowEST, 'day')) {
-      return { present: [], absent: [], onLeave: [], counts: { present: 0, absent: 0, onLeave: 0, total: 0 } };
+      return { present: [], halfDay: [], absent: [], onLeave: [], counts: { present: 0, halfDay: 0, absent: 0, onLeave: 0, total: 0 } };
     }
 
     const targetDateStart = targetDateMoment.clone().startOf('day').toDate();
@@ -279,7 +279,7 @@ class TimeTrackerService {
     if (scope.user) {
       userQuery._id = scope.user;
     } else if (scope._id === null) {
-      return { present: [], absent: [], onLeave: [], counts: { present: 0, absent: 0, onLeave: 0, total: 0 } };
+      return { present: [], halfDay: [], absent: [], onLeave: [], counts: { present: 0, halfDay: 0, absent: 0, onLeave: 0, total: 0 } };
     }
 
     const usersInScope = await User.find(userQuery).select('name email designation department avatar empID joiningDate');
@@ -301,7 +301,8 @@ class TimeTrackerService {
 
     const onLeaveUserIds = approvedLeaves.map(leave => leave.employee._id.toString());
 
-    const present = timeLogs.filter(log => log.status !== 'Absent' && log.status !== 'Leave' && log.status !== 'On Leave');
+    const present = timeLogs.filter(log => log.status === 'Present');
+    const halfDay = timeLogs.filter(log => log.status === 'Half Day');
     const explicitAbsentLogs = timeLogs.filter(log => log.status === 'Absent');
     const explicitLeaveLogs = timeLogs.filter(log => log.status === 'Leave' || log.status === 'On Leave');
 
@@ -337,12 +338,14 @@ class TimeTrackerService {
 
     return {
       present,
-      onLeave,
+      halfDay,
       absent,
+      onLeave,
       counts: {
         present: present.length,
-        onLeave: onLeave.length,
+        halfDay: halfDay.length,
         absent: absent.length,
+        onLeave: onLeave.length,
         total: usersInScope.length
       }
     };
