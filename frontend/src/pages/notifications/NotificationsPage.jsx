@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -22,6 +22,7 @@ export default function NotificationsPage() {
  const [page, setPage] = useState(1);
  const [selectedNotif, setSelectedNotif] = useState(null);
  const limit = 20;
+ const listRef = useRef(null);
 
  // Sync selectedNotif with URL 'id'
  useEffect(() => {
@@ -37,7 +38,20 @@ export default function NotificationsPage() {
  dispatch(fetchNotifications({ page, limit }));
  }, [page, dispatch]);
 
+ // Scroll to top of list when page changes
+ useEffect(() => {
+ if (listRef.current) {
+ listRef.current.scrollTop = 0;
+ }
+ }, [page]);
 
+ // Adjust page if it exceeds total pages after deletion
+ useEffect(() => {
+ const totalPages = Math.ceil((pagination?.total || 0) / limit);
+ if (page > totalPages && totalPages > 0) {
+ setPage(totalPages);
+ }
+ }, [pagination?.total]);
 
  const handleClick = (notif) => {
  setSearchParams({ id: notif._id });
@@ -48,9 +62,17 @@ export default function NotificationsPage() {
  setSearchParams({});
  };
 
- const handleDelete = (e, id) => {
+ const handleDelete = async (e, id) => {
  e.stopPropagation();
- dispatch(deleteNotification(id));
+ if (selectedNotif?._id === id) {
+ setSearchParams({});
+ }
+ try {
+ await dispatch(deleteNotification(id)).unwrap();
+ dispatch(fetchNotifications({ page, limit }));
+ } catch (err) {
+ // Error handled silently
+ }
  };
 
  const totalPages = Math.ceil((pagination?.total || 0) / limit);
@@ -89,7 +111,7 @@ export default function NotificationsPage() {
   </div>
 
  {/* Notification List Content */}
- <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200">
+  <div ref={listRef} className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200">
  {loading && (
  <div className="py-12 text-center">
  <div className="inline-block w-6 h-6 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />
@@ -106,10 +128,9 @@ export default function NotificationsPage() {
   <div
   key={notif._id}
   onClick={() => handleClick(notif)}
-  style={selectedNotif?._id === notif._id ? { backgroundColor: 'rgb(204 251 241)' } : {}}
   className={`relative p-4 border-b border-gray-50 cursor-pointer transition-all group border-l-4 ${
   selectedNotif?._id === notif._id 
-  ? 'hover:bg-teal-100 dark:hover:bg-teal-900/40 border-l-teal-600' 
+  ? 'bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-900/40 border-l-teal-600' 
   : 'bg-surface hover:bg-app border-l-transparent'
   }`}
   >
