@@ -2,6 +2,7 @@ import axios from "axios";
 import { PublicClientApplication } from "@azure/msal-browser";
 import { msalConfig, loginRequest, msalInstance } from "./authConfig";
 import { toast } from "react-toastify"; // Import toast
+import { TIMEZONE } from "./utils/dateUtils";
 
 let store;
 function clearAllCookies() {
@@ -39,7 +40,7 @@ const api = axios.create({
 
 api.interceptors.request.use(
  async (config) => {
- config.headers['X-Timezone'] = Intl.DateTimeFormat().resolvedOptions().timeZone;
+ config.headers['X-Timezone'] = TIMEZONE;
  try {
  const accounts = msalInstance.getAllAccounts();
  const activeAccount = msalInstance.getActiveAccount() || accounts[0];

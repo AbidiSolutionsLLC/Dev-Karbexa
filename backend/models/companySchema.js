@@ -83,7 +83,7 @@ const companySchema = new mongoose.Schema({
   },
   timezone: {
     type: String,
-    default: 'UTC' // Critical for TimeTracker rollover limits
+    default: 'America/New_York' // Critical for TimeTracker rollover limits
   },
   currency: {
     type: String,

@@ -117,25 +117,25 @@ import Loader from "./ui/Loader";
         <table className="min-w-full text-sm border-collapse">
           <thead>
             <tr className="bg-card border-b border-border-subtle">
-              {columns.map((column, idx) => (
-                <th
-                  key={column.key}
-                  className={`px-6 py-4 font-semibold text-xs text-muted uppercase tracking-wider text-left whitespace-nowrap ${
-                    column.sortable !== false ? 'cursor-pointer hover:text-heading transition-colors group' : ''
-                  }`}
-                  onClick={() => column.sortable !== false && handleSort(column.key)}
-                >
-                  <div className="flex items-center gap-2">
-                    {column.label}
-                    {column.sortable !== false && (
-                      <span className={`inline-flex flex-col items-center justify-center text-[10px] leading-[0.5] ${sortConfig.key === column.key ? 'text-brand' : 'text-muted/30 group-hover:text-muted/70 transition-colors'}`}>
-                        <span className={sortConfig.key === column.key && sortConfig.direction === 'asc' ? 'text-brand' : 'text-inherit'}>▲</span>
-                        <span className={sortConfig.key === column.key && sortConfig.direction === 'desc' ? 'text-brand mt-[2px]' : 'text-inherit mt-[2px]'}>▼</span>
-                      </span>
-                    )}
-                  </div>
-                </th>
-              ))}
+{columns.map((column) => (
+ <th
+ key={column.key}
+ className={`px-6 py-4 font-semibold text-xs text-muted uppercase tracking-wider whitespace-nowrap ${
+ column.align === 'right' ? 'text-center' : 'text-left'
+ } ${column.sortable !== false ? 'cursor-pointer hover:text-heading transition-colors group' : ''}`}
+ onClick={() => column.sortable !== false && handleSort(column.key)}
+ >
+ <div className={`flex items-center gap-2 ${column.align === 'right' ? 'justify-center' : ''}`}>
+ {column.label}
+ {column.sortable !== false && (
+ <span className={`inline-flex flex-col items-center justify-center text-[10px] leading-[0.5] ${sortConfig.key === column.key ? 'text-brand' : 'text-muted/30 group-hover:text-muted/70 transition-colors'}`}>
+ <span className={sortConfig.key === column.key && sortConfig.direction === 'asc' ? 'text-brand' : 'text-inherit'}>▲</span>
+ <span className={sortConfig.key === column.key && sortConfig.direction === 'desc' ? 'text-brand mt-[2px]' : 'text-inherit mt-[2px]'}>▼</span>
+ </span>
+ )}
+ </div>
+ </th>
+))}
               {actions.length > 0 && (
                 <th className="px-6 py-4 font-semibold text-xs text-muted uppercase tracking-wider text-right whitespace-nowrap">
                   Actions

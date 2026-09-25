@@ -39,9 +39,9 @@ const UpcomingBirthdaysCard = ({ onDelete }) => {
 
  if (loading) {
  return (
- <div className="relative bg-surface rounded-[1.2rem] shadow-md border border-amber-100 p-4 w-full">
+ <div className="relative bg-surface rounded-[1.2rem] shadow-md border border-amber-100 p-3 w-full h-full flex flex-col">
  <div className="flex items-center gap-2 mb-3">
- <FiGift className="w-4 h-4 text-pink-600" />
+ <FiGift className="w-4 h-4 text-amber-600 dark:text-amber-400" />
  <h3 className="text-xs font-bold text-main uppercase tracking-tight">Upcoming Birthdays</h3>
  </div>
  <Loader size="md" />
@@ -50,11 +50,11 @@ const UpcomingBirthdaysCard = ({ onDelete }) => {
  }
 
  return (
- <div className="relative bg-surface rounded-[1.2rem] shadow-md border border-amber-100 p-4 w-full">
- <div className="flex justify-between items-start mb-3">
+ <div className="relative bg-surface rounded-[1.2rem] shadow-md border border-amber-100 p-3 w-full h-full flex flex-col">
+ <div className="flex justify-between items-start mb-2">
  <div>
  <div className="flex items-center gap-2 mb-1">
- <FiGift className="w-4 h-4 text-pink-600" />
+ <FiGift className="w-4 h-4 text-amber-600 dark:text-amber-400" />
  <h3 className="text-xs font-bold text-main uppercase tracking-tight">Upcoming Birthdays</h3>
  </div>
  <p className="text-[10px] font-medium text-muted">Celebrate your team!</p>
@@ -85,15 +85,15 @@ const UpcomingBirthdaysCard = ({ onDelete }) => {
  </div>
  </div>
 
- <div className="max-h-[200px] overflow-y-auto w-full">
- {birthdays.length > 0 ? (
- <ul className="space-y-2 text-[10px]">
- {birthdays.slice(0, 3).map((b, index) => (
- <li
- key={index}
- className="bg-pink-50 rounded-lg p-3 flex items-center gap-2.5"
- >
- <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-main">
+<div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar max-h-[150px] w-full">
+  {birthdays.length > 0 ? (
+  <ul className="space-y-1.5 text-[10px]">
+  {birthdays.slice(0, 6).map((b, index) => (
+  <li
+  key={index}
+  className="bg-[#E0E5EA]/30 rounded-lg p-2 flex items-center gap-2"
+  >
+  <div className="w-7 h-7 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center text-[10px] font-bold text-amber-700 dark:text-amber-300 shrink-0">
  {b.name?.[0] || "?"}
  </div>
  <div className="flex-1 min-w-0">

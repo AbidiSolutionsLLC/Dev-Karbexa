@@ -36,7 +36,7 @@ const TenantManagement = () => {
     customCompanyType: "",
     adminPassword: "",
     maxUsers: 50,
-    timezone: "UTC",
+    timezone: "America/New_York",
     currency: "USD",
     azureTenantId: "",
     azureClientId: "",
@@ -435,8 +435,8 @@ const TenantManagement = () => {
                 <option value="PKR">PKR (Rs)</option>
               </select>
               <select name="timezone" onChange={handleInputChange} className="glass-input sm:col-span-2 cursor-pointer">
+                <option value="America/New_York">America/New_York (Eastern US & Canada)</option>
                 <option value="UTC">UTC (Default)</option>
-                <option value="America/New_York">America/New_York (EST)</option>
                 <option value="Europe/London">Europe/London (GMT)</option>
                 <option value="Asia/Karachi">Asia/Karachi (PKT)</option>
                 <option value="Australia/Sydney">Australia/Sydney (AEST)</option>
@@ -636,7 +636,7 @@ const TenantManagement = () => {
                   </div>
                   <div>
                     <p className="text-[10px] font-black text-muted uppercase tracking-widest">Timezone</p>
-                    <p className="text-sm font-semibold text-main">{selectedTenant.timezone || "UTC"}</p>
+                    <p className="text-sm font-semibold text-main">{selectedTenant.timezone || "America/New_York"}</p>
                   </div>
                   <div>
                     <p className="text-[10px] font-black text-muted uppercase tracking-widest">SSO Status</p>

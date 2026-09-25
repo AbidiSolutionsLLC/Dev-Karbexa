@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Clock, Plus } from "lucide-react";
+import { Clock, Plus, Check, Search, UserPlus } from "lucide-react";
 import { FaUserCircle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import api from "../../axios";
@@ -9,12 +10,14 @@ import AdminRaiseTicketModal from "../../pages/tickets/RaiseTicketModal";
 import ModernSelect from "../../components/ui/ModernSelect";
 import PageContainer from "../../components/ui/PageContainer";
 import GlassInput from "../../components/ui/GlassInput";
+import GlassModal from "../../components/ui/GlassModal";
+import Loader from "../../components/ui/Loader";
 import FilterRow from "../../components/ui/FilterRow";
 import TableWithPagination from "../../components/TableWithPagination";
 import { STATUS_VARIANTS, resolveStatusVariant } from "../../components/StatusBadge";
 
 const AdminTickets = () => {
- const [entriesPerPage, setEntriesPerPage] = useState(10);
+ const entriesPerPage = 10;
  const [searchTerm, setSearchTerm] = useState("");
  const [statusFilter, setStatusFilter] = useState("all");
  const [priorityFilter, setPriorityFilter] = useState("all");
@@ -23,6 +26,11 @@ const AdminTickets = () => {
  const [showModal, setShowModal] = useState(false);
  const [tickets, setTickets] = useState([]);
  const [loading, setLoading] = useState(false);
+ const [technicians, setTechnicians] = useState([]);
+ const [loadingTechnicians, setLoadingTechnicians] = useState(false);
+ const [assignTicket, setAssignTicket] = useState(null);
+ const [assignSearch, setAssignSearch] = useState("");
+ const [assigningUserId, setAssigningUserId] = useState(null);
 
  const navigate = useNavigate();
 
@@ -40,7 +48,26 @@ const AdminTickets = () => {
  }
  };
 
+ const fetchTechnicians = async () => {
+ try {
+ setLoadingTechnicians(true);
+ const res = await api.get("/users?status=Active");
+ const usersArray = Array.isArray(res.data) ? res.data : res.data.data || [];
+ const techList = usersArray.filter(user =>
+ user.role === 'Technician' ||
+ user.isTechnician === true ||
+ (user.designation && user.designation.toLowerCase() === 'technician')
+ );
+ setTechnicians(techList);
+ } catch (error) {
+ console.error("Failed to fetch technicians:", error);
+ } finally {
+ setLoadingTechnicians(false);
+ }
+ };
+
  fetchTickets();
+ fetchTechnicians();
  }, []);
 
  const handleNewTicketSubmit = (newTicket) => {
@@ -74,6 +101,40 @@ const AdminTickets = () => {
  }
  };
 
+ const openTicketDetail = (ticket) => {
+ navigate(`/admin/assign-ticket/${ticket._id}`, { state: { ticket } });
+ };
+
+ const handleAssignTicket = async (ticketId, userId) => {
+ setAssigningUserId(userId);
+ try {
+ const res = await api.patch(`/tickets/${ticketId}/assign`, { assignedTo: userId });
+ const updatedTicket = res.data;
+ setTickets((prev) =>
+ prev.map((t) => (t._id === ticketId ? { ...t, assignedTo: updatedTicket.assignedTo } : t))
+ );
+ setAssignTicket((prev) =>
+ prev && prev._id === ticketId ? { ...prev, assignedTo: updatedTicket.assignedTo } : prev
+ );
+ toast.success("Ticket assigned successfully");
+ } catch (err) {
+ toast.error("Failed to assign ticket");
+ console.error("Failed to assign ticket:", err);
+ } finally {
+ setAssigningUserId(null);
+ }
+ };
+
+ const filteredTechnicians = technicians.filter((user) => {
+ const query = assignSearch.trim().toLowerCase();
+ if (!query) return true;
+ return (
+ String(user.name || "").toLowerCase().includes(query) ||
+ String(user.designation || user.role || "").toLowerCase().includes(query) ||
+ String(user.email || "").toLowerCase().includes(query)
+ );
+ });
+
  // Combined filter logic
  const filteredTickets = tickets.filter((ticket) => {
  const matchesSearch = String(ticket.subject || "").toLowerCase().includes(searchTerm.toLowerCase());
@@ -90,8 +151,13 @@ const AdminTickets = () => {
  key: "details",
  label: "Ticket Details",
  render: (_, ticket) => (
- <div className="flex flex-col">
- <div className="font-medium text-heading text-sm">{ticket.subject}</div>
+ <div className="flex flex-col group/cell" title="Click to view ticket details">
+ <div className="font-medium text-heading text-sm flex items-center gap-2">
+ {ticket.subject}
+ <span className="text-muted opacity-0 group-hover/cell:opacity-100 transition-opacity">
+ → 
+ </span>
+ </div>
  <div className="flex flex-wrap items-center gap-2 mt-2">
  <span className="text-xs text-muted font-mono">
  #{ticket.ticketID || ticket._id?.slice(0, 6)}
@@ -175,7 +241,7 @@ const AdminTickets = () => {
  label: "Actions",
  align: "right",
  render: (_, ticket) => (
- <div className="flex justify-end items-center gap-2">
+ <div className="flex justify-end items-center gap-2" onClick={(e) => e.stopPropagation()}>
  <div className="w-32">
  <ModernSelect
  value={ticket.status}
@@ -199,9 +265,11 @@ const AdminTickets = () => {
  />
  </div>
  <button
- onClick={() => navigate(`/admin/assign-ticket/${ticket._id}`, { state: { ticket } })}
- className="border border-border-subtle px-3 py-1.5 rounded-lg text-xs font-medium text-main hover:bg-surface/50 transition shadow-sm hover:shadow-md"
+ onClick={() => setAssignTicket(ticket)}
+ className="inline-flex items-center gap-1.5 bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50 px-3 py-2 rounded-lg text-xs font-bold hover:brightness-95 transition-all shadow-sm hover:shadow-md"
+ title="Assign this ticket to a technician"
  >
+ <UserPlus size={14} />
  Assign
  </button>
  </div>
@@ -291,30 +359,18 @@ const AdminTickets = () => {
  className="w-24 bg-transparent border-none text-xs font-semibold text-main outline-none cursor-pointer !py-0 !px-0 !rounded-none !shadow-none"
  />
  </div>
-
- {/* Entries per page */}
- <div className="min-w-[120px]">
- <ModernSelect
- value={entriesPerPage}
- onChange={(e) => setEntriesPerPage(Number(e.target.value))}
- options={[
- { value: 10, label: "10 entries" },
- { value: 25, label: "25 entries" },
- { value: 50, label: "50 entries" }
- ]}
- />
- </div>
  </FilterRow>
  }
  >
- <TableWithPagination
- columns={ticketColumns}
- data={filteredTickets}
- loading={loading}
- emptyMessage="No tickets found"
- rowsPerPage={entriesPerPage}
- defaultSort={{ key: "createdAt", direction: "desc" }}
- />
+<TableWithPagination
+  columns={ticketColumns}
+  data={filteredTickets}
+  loading={loading}
+  emptyMessage="No tickets found"
+  rowsPerPage={entriesPerPage}
+  defaultSort={{ key: "createdAt", direction: "desc" }}
+  onRowClick={openTicketDetail}
+  />
  </PageContainer>
 
  {showModal && (
@@ -322,6 +378,117 @@ const AdminTickets = () => {
  onClose={() => setShowModal(false)}
  onSubmit={handleNewTicketSubmit}
  />
+ )}
+
+ {/* Assign Ticket Modal */}
+ {assignTicket && (
+ <GlassModal
+ isOpen={!!assignTicket}
+ onClose={() => {
+ setAssignTicket(null);
+ setAssignSearch("");
+ setAssigningUserId(null);
+ }}
+ maxWidth="max-w-lg"
+ title={
+ <div>
+ <h2 className="text-base sm:text-lg font-black text-heading tracking-widest uppercase">
+ Assign Ticket
+ </h2>
+ <p className="text-muted text-xs font-mono mt-1 font-bold">
+ #{assignTicket.ticketID || assignTicket._id?.slice(0, 6)} · {assignTicket.subject}
+ </p>
+ </div>
+ }
+ >
+ <div className="space-y-4">
+ {/* Current assignee summary */}
+ <div className="flex items-center gap-3 p-3 bg-surface border border-border-subtle rounded-xl">
+ <div className="flex items-center justify-center w-9 h-9 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 shrink-0">
+ <FaUserCircle className="w-6 h-6" />
+ </div>
+ <div className="min-w-0">
+ <p className="text-[10px] font-black text-muted uppercase tracking-widest">Current Assignee</p>
+ <p className="text-sm font-bold text-heading truncate">
+ {assignTicket.assignedTo?.name || "Unassigned"}
+ </p>
+ </div>
+ </div>
+
+ {/* Search */}
+ <div className="relative">
+ <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+ <input
+ type="text"
+ value={assignSearch}
+ onChange={(e) => setAssignSearch(e.target.value)}
+ placeholder="Search technicians by name, role or email..."
+ className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-surface border border-border-subtle text-sm font-medium outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-500/30 transition-all"
+ />
+ </div>
+
+ {/* Technician list */}
+ <div className="max-h-72 overflow-y-auto custom-scrollbar rounded-xl border border-border-subtle divide-y divide-border-subtle">
+ {loadingTechnicians ? (
+ <div className="p-8 flex items-center justify-center">
+ <Loader text="Loading technicians..." size="md" />
+ </div>
+ ) : filteredTechnicians.length > 0 ? (
+ filteredTechnicians.map((user) => {
+ const isAssigned = assignTicket.assignedTo?._id === user._id;
+ const isAssigning = assigningUserId === user._id;
+ return (
+ <button
+ key={user._id}
+ onClick={() => handleAssignTicket(assignTicket._id, user._id)}
+ disabled={!!assigningUserId}
+ className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all ${
+ isAssigned
+ ? "bg-amber-50 dark:bg-amber-900/30"
+ : "hover:bg-surface/70"
+ } ${assigningUserId ? "opacity-60 cursor-not-allowed" : ""}`}
+ >
+ <div className="flex items-center justify-center w-9 h-9 rounded-full bg-surface border border-border-subtle text-muted shrink-0 overflow-hidden">
+ {user.avatar ? (
+ <img src={user.avatar} alt={user.name} className="w-full h-full rounded-full object-cover" />
+ ) : (
+ <FaUserCircle className="w-6 h-6" />
+ )}
+ </div>
+ <div className="flex-1 min-w-0">
+ <p className="text-sm font-bold text-main truncate">{user.name}</p>
+ <p className="text-[10px] text-muted font-bold uppercase tracking-wide truncate">
+ {user.designation || user.role || "Employee"}
+ </p>
+ </div>
+ {isAssigning ? (
+ <Loader variant="spinner" size="sm" className="text-amber-500" />
+ ) : isAssigned ? (
+ <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-green-600 dark:text-green-400">
+ <Check className="w-4 h-4" /> Assigned
+ </span>
+ ) : null}
+ </button>
+ );
+ })
+ ) : (
+ <div className="p-8 text-center">
+ <div className="flex flex-col items-center gap-2">
+ <UserPlus className="w-8 h-8 text-slate-300" />
+ <p className="text-sm font-semibold text-muted uppercase tracking-wider">
+ {technicians.length === 0 ? "No technicians available" : "No matching technicians"}
+ </p>
+ <p className="text-xs text-muted">
+ {technicians.length === 0
+ ? "Add a technician from the ticket details page to enable assignment."
+ : "Try a different search term."}
+ </p>
+ </div>
+ </div>
+ )}
+ </div>
+ </div>
+ </GlassModal>
  )}
  </>
  );

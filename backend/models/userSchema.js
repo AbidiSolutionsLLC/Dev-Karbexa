@@ -128,7 +128,7 @@ const userSchema = new mongoose.Schema(
     },
     timeZone: {
       type: String,
-      default: "UTC",
+      default: "America/New_York",
     },
     avatar: {
       type: String,

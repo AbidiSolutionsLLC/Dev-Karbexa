@@ -52,7 +52,7 @@ const HolidaysCard = ({ onDelete }) => {
  const upcomingHolidays = holidays
  .filter(h => extractDate(h.date) >= today)
  .sort((a, b) => extractDate(a.date) - extractDate(b.date))
- .slice(0, 3);
+ .slice(0, 6);
 
  const getHolidayIcon = (holidayType) => {
  switch (holidayType.toLowerCase()) {
@@ -82,7 +82,7 @@ const HolidaysCard = ({ onDelete }) => {
 
  if (loading) {
  return (
- <div className="relative bg-surface rounded-[1.2rem] shadow-md border border-amber-100 p-4">
+ <div className="relative bg-surface rounded-[1.2rem] shadow-md border border-amber-100 p-3 h-full flex flex-col w-full">
  <div className="flex items-center gap-2 mb-3">
  <FiCalendar className="w-4 h-4 text-orange-600" />
  <h3 className="text-xs font-bold text-main uppercase tracking-tight">Holidays</h3>
@@ -93,9 +93,9 @@ const HolidaysCard = ({ onDelete }) => {
  }
 
  return (
- <div className="relative bg-surface rounded-[1.2rem] shadow-md border border-amber-100 p-4">
+ <div className="relative bg-surface rounded-[1.2rem] shadow-md border border-amber-100 p-3 h-full flex flex-col w-full">
  {/* Header */}
- <div className="flex justify-between items-start mb-3">
+ <div className="flex justify-between items-start mb-2">
  <div>
  <div className="flex items-center gap-2 mb-1">
  <FiCalendar className="w-4 h-4 text-orange-600" />
@@ -126,15 +126,15 @@ const HolidaysCard = ({ onDelete }) => {
  </div>
 
  {/* Holiday list */}
- <div className="max-h-[200px] overflow-y-auto w-full">
- {upcomingHolidays.length > 0 ? (
- <ul className="space-y-2 text-[10px]">
- {upcomingHolidays.map((holiday, index) => (
- <li
- key={index}
- className="flex items-center bg-[#E0E5EA]/30 rounded-lg p-2 gap-2.5"
- >
- <div className={`w-8 h-8 flex items-center justify-center rounded-lg ${getHolidayColor(holiday.holidayType)}`}>
+<div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar max-h-[150px] w-full">
+  {upcomingHolidays.length > 0 ? (
+  <ul className="space-y-1.5 text-[10px]">
+  {upcomingHolidays.map((holiday, index) => (
+  <li
+  key={index}
+  className="flex items-center bg-[#E0E5EA]/30 rounded-lg p-1.5 gap-2"
+  >
+  <div className={`w-7 h-7 flex items-center justify-center rounded-lg ${getHolidayColor(holiday.holidayType)}`}>
  {getHolidayIcon(holiday.holidayType)}
  </div>
  <div className="flex-1 min-w-0">

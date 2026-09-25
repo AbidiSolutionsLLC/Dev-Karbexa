@@ -1,21 +1,32 @@
 // src/Components/home/FeedsCard.jsx
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { FiActivity, FiMoreVertical, FiTrash2 } from "react-icons/fi";
+import api from "../../axios";
+import { toast } from "react-toastify";
 import EmptyCardState from "./EmptyCardState";
+import Loader from "../ui/Loader";
 
-const feedsData = [
- { message: "Your request was approved from admin", actionType: "status" },
- { message: "Your log request was approved by project manager" },
- { message: "You have a message", description: "Hi, Paul, our new project...", actionType: "checkin" },
- { message: "You have not checked in yet." },
-];
+function timeAgo(dateStr) {
+ const then = new Date(dateStr);
+ if (isNaN(then.getTime())) return "";
+ const mins = Math.floor((Date.now() - then.getTime()) / 60000);
+ if (mins < 1) return "Just now";
+ if (mins < 60) return `${mins}m ago`;
+ const hrs = Math.floor(mins / 60);
+ if (hrs < 24) return `${hrs}h ago`;
+ const days = Math.floor(hrs / 24);
+ if (days < 7) return `${days}d ago`;
+ return then.toLocaleDateString();
+}
 
 const FeedsCard = ({ onDelete }) => {
  const [menuOpen, setMenuOpen] = useState(false);
+ const [feeds, setFeeds] = useState([]);
+ const [loading, setLoading] = useState(true);
  const menuRef = useRef();
 
  // Close menu when clicking outside
- React.useEffect(() => {
+ useEffect(() => {
  const handler = (e) => {
  if (menuRef.current && !menuRef.current.contains(e.target)) {
  setMenuOpen(false);
@@ -25,17 +36,51 @@ const FeedsCard = ({ onDelete }) => {
  return () => document.removeEventListener("mousedown", handler);
  }, []);
 
+ useEffect(() => {
+ const fetchFeeds = async () => {
+ try {
+ const response = await api.get("/notifications", { params: { limit: 6 } });
+ const notifications = response.data || [];
+ setFeeds(
+ notifications.map((n) => ({
+ id: n._id,
+ message: n.title,
+ description: n.message && n.message !== n.title ? n.message : undefined,
+ time: timeAgo(n.createdAt),
+ }))
+ );
+ } catch (error) {
+ console.error("Failed to fetch feeds:", error);
+ toast.error("Failed to load feeds");
+ } finally {
+ setLoading(false);
+ }
+ };
+ fetchFeeds();
+ }, []);
+
+ if (loading) {
  return (
- // CHANGED: p-4 -> p-3 for tighter spacing
+ <div className="relative bg-surface rounded-[1.2rem] shadow-md border border-amber-100 p-3 h-full w-full flex flex-col">
+ <div className="flex items-center gap-2 mb-2">
+ <FiActivity className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+ <h3 className="text-xs font-bold text-main uppercase tracking-tight">Feeds</h3>
+ </div>
+ <Loader size="sm" />
+ </div>
+ );
+ }
+
+ return (
  <div className="relative bg-surface rounded-[1.2rem] shadow-md border border-amber-100 p-3 h-full flex flex-col">
  {/* Header */}
  <div className="flex justify-between items-start mb-2">
  <div>
  <div className="flex items-center gap-2 mb-0.5">
- <FiActivity className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+ <FiActivity className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
  <h3 className="text-xs font-bold text-main uppercase tracking-tight">Feeds</h3>
  </div>
- <p className="text-[9px] font-medium text-muted">4+ unread messages</p>
+ <p className="text-[9px] font-medium text-muted">Recent updates for you</p>
  </div>
 
  <div className="relative" ref={menuRef}>
@@ -60,33 +105,29 @@ const FeedsCard = ({ onDelete }) => {
  </div>
 
  {/* Feed list */}
- <div className="flex-1 overflow-y-auto pr-1">
- {feedsData.length > 0 ? (
+ <div className="flex-1 min-h-0 overflow-y-auto pr-1 custom-scrollbar max-h-[160px]">
+ {feeds.length > 0 ? (
  <ul className="space-y-1.5">
- {feedsData.map((item, index) => (
+ {feeds.map((item) => (
  <li
- key={index}
- className="bg-[#E0E5EA]/30 rounded-lg px-2.5 py-1.5 flex items-center justify-between gap-2"
+ key={item.id}
+ className="flex items-start gap-2 rounded-lg px-2.5 py-1.5 bg-[#E0E5EA]/30"
  >
+ <span className="mt-1 h-2 w-2 rounded-full shrink-0 bg-amber-600 dark:bg-amber-400" />
  <div className="min-w-0 flex-1">
- <span className="font-medium text-main truncate block text-[10px]">{item.message}</span>
- {item.description && (
- <div className="text-[9px] text-muted truncate mt-0.5">{item.description}</div>
- )}
+ <div className="text-[10px] font-medium text-main leading-snug break-words">
+ {item.message}
  </div>
-
- {item.actionType && (
- <button
- className={`text-[9px] px-2 py-0.5 rounded-md font-medium shrink-0 ${item.actionType === "status" ? "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400" : "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400"}`}
- >
- {item.actionType === "status" ? "View" : "Check-in"}
- </button>
+ {item.description && (
+ <div className="text-[9px] text-muted mt-0.5 leading-snug break-words">{item.description}</div>
  )}
+ <div className="text-[9px] text-muted mt-1">{item.time}</div>
+ </div>
  </li>
  ))}
  </ul>
  ) : (
- <EmptyCardState message="You haven't added anything yet" />
+ <EmptyCardState message="No recent updates" />
  )}
  </div>
  </div>

@@ -20,7 +20,7 @@ const TasksAssignedToMeCard = ({ onDelete }) => {
  }, []);
 
  return (
- <div className="relative bg-surface rounded-[1.2rem] shadow-md border border-amber-100 p-4">
+ <div className="relative bg-surface rounded-[1.2rem] shadow-md border border-amber-100 p-4 h-full flex flex-col">
  {/* Header */}
  <div className="flex justify-between items-start mb-3">
  <div>
@@ -60,7 +60,7 @@ const TasksAssignedToMeCard = ({ onDelete }) => {
  </div>
 
  {/* Task list */}
- <div className="max-h-[200px] overflow-y-auto w-full">
+ <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar max-h-[200px] w-full">
  {assignedTasks.length > 0 ? (
  <ul className="space-y-2 text-[10px]">
  {assignedTasks.map((item, index) => (

@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { 
  ClipboardDocumentCheckIcon, 
  FunnelIcon, 
@@ -40,7 +41,27 @@ export default function AssignedTickets() {
  const [commentError, setCommentError] = useState(null);
  const [sendingComment, setSendingComment] = useState(false);
  const [openDropdownId, setOpenDropdownId] = useState(null);
+ const [dropdownPos, setDropdownPos] = useState(null);
  const dropdownRef = useRef(null);
+
+ const closeStatusMenu = () => {
+ setOpenDropdownId(null);
+ setDropdownPos(null);
+ };
+
+ const openStatusMenu = (e, ticketId) => {
+ e.stopPropagation();
+ if (openDropdownId === ticketId) {
+ closeStatusMenu();
+ return;
+ }
+ const rect = e.currentTarget.getBoundingClientRect();
+ setDropdownPos({
+ top: rect.bottom + 4,
+ left: rect.left
+ });
+ setOpenDropdownId(ticketId);
+ };
 
  // 1. Fetch Data
  const fetchData = async () => {
@@ -66,7 +87,7 @@ export default function AssignedTickets() {
  
  setTickets(myAssignments);
  setFilteredTickets(myAssignments);
- } catch (err) {
+ } catch {
  toast.error("Failed to load tickets");
  } finally {
  setLoading(false);
@@ -78,7 +99,7 @@ export default function AssignedTickets() {
  // Close dropdown on click outside
  function handleClickOutside(event) {
  if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
- setOpenDropdownId(null);
+ closeStatusMenu();
  }
  }
  document.addEventListener("mousedown", handleClickOutside);
@@ -123,9 +144,9 @@ export default function AssignedTickets() {
  if (selectedTicket && selectedTicket._id === ticketId) {
  setSelectedTicket(prev => ({ ...prev, status: newStatus }));
  }
- setOpenDropdownId(null);
+ closeStatusMenu();
  toast.success("Status Updated");
- } catch (err) {
+ } catch {
  toast.error("Failed to update status");
  }
  };
@@ -213,18 +234,19 @@ export default function AssignedTickets() {
  render: (_, ticket) => (
  <div className="relative">
  <button
- onClick={(e) => {
- e.stopPropagation();
- setOpenDropdownId(openDropdownId === ticket._id ? null : ticket._id);
- }}
+ onClick={(e) => openStatusMenu(e, ticket._id)}
  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wide transition-all ${getStatusColor(ticket.status)}`}
  >
  {ticket.status}
  <ChevronDownIcon className="w-3 h-3 opacity-60" />
  </button>
 
- {openDropdownId === ticket._id && (
- <div ref={dropdownRef} className="absolute left-0 top-10 w-32 bg-surface rounded-xl shadow-xl border border-border-subtle z-50 overflow-hidden py-1 animate-fadeIn">
+ {openDropdownId === ticket._id && dropdownPos && createPortal(
+ <div
+ ref={dropdownRef}
+ className="fixed z-[9999] w-36 bg-surface rounded-xl shadow-xl border border-border-subtle overflow-hidden py-1 animate-fadeIn"
+ style={{ top: dropdownPos.top, left: dropdownPos.left }}
+ >
  {["Open", "In Progress", "Closed"].map((s) => (
  <button
  key={s}
@@ -234,7 +256,8 @@ export default function AssignedTickets() {
  {s}
  </button>
  ))}
- </div>
+ </div>,
+ document.body
  )}
  </div>
  )

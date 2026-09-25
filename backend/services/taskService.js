@@ -179,6 +179,16 @@ class TaskService {
 
     task.status = status;
     await task.save();
+
+    require("./activityLogService").recordActivity({
+      actorId: user.id || user._id,
+      action: `updated task "${task.title}" to ${status}`,
+      entityType: "task",
+      entityId: task._id,
+      companyId,
+      level: "success",
+    }).catch(() => {});
+
     return task;
   }
 
@@ -211,6 +221,15 @@ class TaskService {
         }).catch(console.error);
       });
     }
+
+    require("./activityLogService").recordActivity({
+      actorId: user.id || user._id,
+      action: `deleted task "${task.title}"`,
+      entityType: "task",
+      entityId: task._id,
+      companyId,
+      level: "warning",
+    }).catch(() => {});
 
     await task.deleteOne();
   }

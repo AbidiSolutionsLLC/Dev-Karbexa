@@ -37,7 +37,7 @@ const UserDetailModal = ({ user, currentUser, isOpen, onClose, onUserUpdated, al
  joiningDate: user.joiningDate?.split("T")[0] || "",
  phoneNumber: user.phoneNumber || "",
  branch: user.branch || "Karachi",
- timeZone: user.timeZone || "Asia/Karachi",
+ timeZone: user.timeZone || "America/New_York",
  empStatus: user.empStatus || "Pending",
  isTechnician: user.isTechnician || false,
  hourlyWage: user.hourlyWage || ""
@@ -339,7 +339,7 @@ const UserDetailModal = ({ user, currentUser, isOpen, onClose, onUserUpdated, al
  {renderField("Joining Date", "joiningDate", formData.joiningDate, "date")}
  {(formData.empType === "Contractor" || formData.empType === "Intern") && renderField("End Date", "endDate", formData.endDate, "date")}
  {renderField("Branch", "branch", formData.branch)}
- {renderField("Timezone", "timeZone", formData.timeZone, "select", ["Asia/Karachi", "America/New_York", "Europe/London", "Asia/Dubai"].map(v => ({ value: v, label: v })))}
+ {renderField("Timezone", "timeZone", formData.timeZone, "select", ["America/New_York", "Asia/Karachi", "Europe/London", "Asia/Dubai"].map(v => ({ value: v, label: v })))}
  </div>
  </div>
 

@@ -65,6 +65,15 @@ class HolidayService {
       await TimeTracker.insertMany(entriesToCreate);
     }
 
+    require("./activityLogService").recordActivity({
+      actorId: user.id || user._id,
+      action: `added a holiday (${holidayName})`,
+      entityType: "holiday",
+      entityId: savedHoliday._id,
+      companyId: user.company || null,
+      level: "info",
+    }).catch(() => {});
+
     return savedHoliday;
   }
 

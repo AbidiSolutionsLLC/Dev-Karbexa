@@ -1,16 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import FeedsCard from "../../components/home/FeedsCard";
 import AttendanceCard from "../../components/home/AttendanceCard";
 import HolidaysCard from "../../components/home/HolidaysCard";
 import ToDoCard from "../../components/home/TodoCard";
 import NotesCard from "../../components/home/NotesCard";
 import AddCardMenu from "../../components/home/AddCardMenu";
-import RecentActivitiesCard from "../../components/home/RecentActivitiesCard";
 import UpcomingBirthdaysCard from "../../components/home/UpcomingBirthdaysCard";
 import LeaveLogCard from "../../components/home/LeaveLogCard";
-import UpcomingDeadlinesCard from "../../components/home/UpcomingDeadlinesCard";
 import TimeoffBalanceCard from "../../components/home/TimeoffBalanceCard";
-import TasksAssignedToMeCard from "../../components/home/TasksAssignedToMeCard";
 
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -43,6 +40,12 @@ const Home = () => {
  const [loading, setLoading] = useState(true);
  const [elapsed, setElapsed] = useState(0);
  const [cards, setCards] = useState([]);
+
+ const filterHiddenCards = useCallback(
+  (list) =>
+  (Array.isArray(list) ? list : []).filter((c) => !["upcomingDeadlines", "tasksAssignedToMe", "recent activities"].includes(c.type)),
+  []
+ );
 
  // ✅ NEW: Local Log (same as sidebar)
  const [localLog, setLocalLog] = useState(null);
@@ -165,15 +168,15 @@ const Home = () => {
  if (!userId) return;
  setLoading(true);
  const res = await api.get(`/users/${userId}/dashboard-cards`);
- setCards(res.data?.data || res.data || []);
- } catch (err) {
- toast.error("Failed to load cards");
- } finally {
- setLoading(false);
- }
- };
- fetchCards();
- }, [userId]);
+ setCards(filterHiddenCards(res.data?.data || res.data || []));
+} catch {
+  toast.error("Failed to load cards");
+  } finally {
+  setLoading(false);
+  }
+  };
+  fetchCards();
+  }, [userId, filterHiddenCards]);
 
   const addCard = async (type) => {
     if (cards.some((c) => c.type === type)) {
@@ -181,8 +184,8 @@ const Home = () => {
       return;
     }
     try {
-      const res = await api.post(`/users/${userId}/dashboard-cards/add`, { type });
-      setCards(res.data?.data || res.data || []);
+ const res = await api.post(`/users/${userId}/dashboard-cards/add`, { type });
+ setCards(filterHiddenCards(res.data?.data || res.data || []));
     } catch {
       toast.error("Failed");
     }
@@ -218,12 +221,9 @@ const userName =
  case "holidays": return <HolidaysCard key={card.id} onDelete={onDelete} />;
  case "todo": return <ToDoCard key={card.id} onDelete={onDelete} userId={userId} />;
  case "notes": return <NotesCard key={card.id} onDelete={onDelete} userId={userId} />;
- case "recent activities": return <RecentActivitiesCard key={card.id} onDelete={onDelete} />;
  case "birthdays": return <UpcomingBirthdaysCard key={card.id} onDelete={onDelete} />;
  case "leavelog": return <LeaveLogCard key={card.id} onDelete={onDelete} />;
- case "upcomingDeadlines": return <UpcomingDeadlinesCard key={card.id} onDelete={onDelete} />;
- case "timeoffBalance": return <TimeoffBalanceCard key={card.id} onDelete={onDelete} />;
- case "tasksAssignedToMe": return <TasksAssignedToMeCard key={card.id} onDelete={onDelete} />;
+ case "timeoffBalance": return <TimeoffBalanceCard key={card.id} onDelete={onDelete} userId={userId} />;
  default: return null;
  }
  };
@@ -276,11 +276,11 @@ const userName =
  </div>
  }
  >
- <div className="mb-3 text-end">
+ <div className="mb-2 text-end">
         <AddCardMenu onAdd={addCard} currentCards={cards} />
  </div>
 
- <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+ <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
  {cards.map(renderCard)}
  </div>
  </PageContainer>

@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 import api from "../../axios";
 import EmptyCardState from "./EmptyCardState";
 import Loader from "../ui/Loader";
+import { formatDisplayDate } from "../../utils/dateUtils";
 
 const LeaveLogCard = ({ onDelete }) => {
  const [menuOpen, setMenuOpen] = useState(false);
@@ -18,19 +19,17 @@ const LeaveLogCard = ({ onDelete }) => {
  useEffect(() => {
  const fetchLeaveLogs = async () => {
  try {
- const response = await api.get("/leaves");
- const allLeaves = response.data.data || [];
+ const response = await api.get("/leaves", { params: { my: true, limit: 10 } });
+ const allLeaves = response.data || [];
 
- // Filter to show only the current user's leaves
  const userLeaves = allLeaves
- .filter(item => item.employee && item.employee.toString() === userId)
  .map((item) => ({
  name: item.employeeName,
- date: new Date(item.startDate).toLocaleDateString(),
+ date: formatDisplayDate(item.startDate, { month: "short", day: "numeric", year: "numeric" }),
  type: item.leaveType,
  status: item.status || "Pending",
  }))
- .slice(0, 3);
+ .slice(0, 6);
 
  setLeaveLogs(userLeaves);
  } catch (error) {
@@ -39,7 +38,15 @@ const LeaveLogCard = ({ onDelete }) => {
  setLoading(false);
  }
  };
+
  fetchLeaveLogs();
+
+ const interval = setInterval(fetchLeaveLogs, 30000);
+ window.addEventListener("focus", fetchLeaveLogs);
+ return () => {
+ clearInterval(interval);
+ window.removeEventListener("focus", fetchLeaveLogs);
+ };
  }, [userId]);
 
  useEffect(() => {
@@ -55,7 +62,7 @@ const LeaveLogCard = ({ onDelete }) => {
  // Loading State
  if (loading) {
  return (
- <div className="relative bg-surface rounded-[1.2rem] shadow-md border border-amber-100 p-3 h-full w-full">
+ <div className="relative bg-surface rounded-[1.2rem] shadow-md border border-amber-100 p-3 h-full w-full flex flex-col">
  <div className="flex items-center gap-2 mb-2">
  <BeachIcon className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
  <h3 className="text-xs font-bold text-main uppercase tracking-tight">Leave Logs</h3>
@@ -97,13 +104,13 @@ const LeaveLogCard = ({ onDelete }) => {
  </div>
  </div>
 
- <div className="flex-1 overflow-y-auto pr-1">
+ <div className="flex-1 min-h-0 overflow-y-auto pr-1 max-h-[150px] custom-scrollbar">
  {leaveLogs.length > 0 ? (
  <ul className="space-y-2">
  {leaveLogs.map((log, index) => (
  <li
  key={index}
- className="bg-[#E0E5EA]/30 rounded-lg p-2.5 flex justify-between items-center"
+ className="bg-[#E0E5EA]/30 rounded-lg p-2 flex justify-between items-center"
  >
  <div className="flex flex-col">
  <span className="font-semibold text-[10px] text-main">{log.name}</span>

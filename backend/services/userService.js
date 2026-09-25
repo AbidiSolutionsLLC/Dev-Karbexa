@@ -465,22 +465,69 @@ class UserService {
   }
 
   async getUpcomingBirthdays(companyId) {
-    const today = new Date();
-    const currentMonth = today.getMonth() + 1;
-    const currentDay = today.getDate();
-    const matchQuery = {};
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentDay = now.getDate();
+    const currentYear = now.getFullYear();
+
+    const matchQuery = { DOB: { $exists: true, $nin: [null, ""] } };
     if (companyId) matchQuery.company = companyId;
-    
+
     const users = await User.aggregate([
       { $match: matchQuery },
-      { $project: { name: 1, DOB: 1, avatar: 1, birthMonth: { $month: { $toDate: "$DOB" } }, birthDay: { $dayOfMonth: { $toDate: "$DOB" } }, daysUntilBirthday: { $let: { vars: { nextBirthday: { $dateFromParts: { year: { $cond: [{ $and: [{ $gte: [{ $month: { $toDate: "$DOB" } }, currentMonth] }, { $gt: [{ $dayOfMonth: { $toDate: "$DOB" } }, currentDay] }] }, today.getFullYear(), today.getFullYear() + 1] }, month: { $month: { $toDate: "$DOB" } }, day: { $dayOfMonth: { $toDate: "$DOB" } } } } }, in: { $divide: [{ $subtract: ["$$nextBirthday", today] }, 1000 * 60 * 60 * 24] } } } } },
+      {
+        $addFields: {
+          dobDate: { $convert: { input: "$DOB", to: "date", onError: null, onNull: null } },
+        },
+      },
+      { $match: { dobDate: { $ne: null } } },
+      {
+        $addFields: {
+          birthMonth: { $month: "$dobDate" },
+          birthDay: { $dayOfMonth: "$dobDate" },
+        },
+      },
+      {
+        $addFields: {
+          nextBirthday: {
+            $dateFromParts: {
+              year: {
+                $cond: [
+                  {
+                    $or: [
+                      { $gt: ["$birthMonth", currentMonth] },
+                      { $and: [{ $eq: ["$birthMonth", currentMonth] }, { $gte: ["$birthDay", currentDay] }] },
+                    ],
+                  },
+                  currentYear,
+                  currentYear + 1,
+                ],
+              },
+              month: "$birthMonth",
+              day: "$birthDay",
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          daysUntilBirthday: { $divide: [{ $subtract: ["$nextBirthday", now] }, 1000 * 60 * 60 * 24] },
+        },
+      },
       { $match: { daysUntilBirthday: { $gte: 0, $lte: 30 } } },
       { $sort: { daysUntilBirthday: 1 } },
-      { $limit: 3 }
+      { $limit: 3 },
     ]);
-    return users.map(user => {
-      const birthDate = new Date(user.DOB);
-      return { name: user.name, date: birthDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), day: birthDate.toLocaleDateString('en-US', { weekday: 'long' }), avatar: user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`, color: `bg-blue-100 text-blue-700` };
+
+    return users.map((user) => {
+      const birthDate = new Date(user.dobDate);
+      return {
+        name: user.name,
+        date: birthDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        day: birthDate.toLocaleDateString('en-US', { weekday: 'long' }),
+        avatar: user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`,
+        color: `bg-blue-100 text-blue-700`,
+      };
     });
   }
 

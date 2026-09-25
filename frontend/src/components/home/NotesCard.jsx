@@ -64,9 +64,9 @@ const NotesCard = ({ onDelete, userId }) => {
  };
 
  return (
- <div className="relative bg-surface rounded-[1.2rem] shadow-md border border-amber-100 p-4 w-full">
+ <div className="relative bg-surface rounded-[1.2rem] shadow-md border border-amber-100 p-3 w-full h-full flex flex-col">
  {/* Header */}
- <div className="flex justify-between items-start mb-3">
+ <div className="flex justify-between items-start mb-2">
  <div>
  <div className="flex items-center gap-2 mb-1">
  <FiEdit className="w-4 h-4 text-amber-600 dark:text-amber-400" />
@@ -104,7 +104,7 @@ const NotesCard = ({ onDelete, userId }) => {
  </div>
 
  {/* Add Note Input */}
- <div className="flex flex-col mb-3 gap-2">
+ <div className="flex flex-col mb-2 gap-2">
  <input
  type="text"
  className="flex-1 border border-subtle px-3 py-2 rounded-lg text-xs bg-surface"
@@ -123,13 +123,13 @@ const NotesCard = ({ onDelete, userId }) => {
  </div>
 
  {/* Notes List */}
- <div className="max-h-[100px] overflow-y-auto w-full">
  {notes.length > 0 ? (
+ <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar max-h-[100px] w-full">
  <ul className="space-y-2 text-[10px]">
  {notes.map((note) => (
  <li
  key={note.id}
- className="bg-[#E0E5EA]/30 p-3 rounded-lg flex justify-between items-start gap-2"
+ className="bg-[#E0E5EA]/30 p-2 rounded-lg flex justify-between items-start gap-2"
  >
  <div className="flex-1">
  {editingId === note.id ? (
@@ -181,10 +181,10 @@ const NotesCard = ({ onDelete, userId }) => {
  </li>
  ))}
  </ul>
+ </div>
  ) : (
  <EmptyCardState message="You haven't added anything yet" />
  )}
- </div>
  </div>
  );
 };

@@ -29,7 +29,7 @@ const CreateUserModal = ({ isOpen, setIsOpen, onUserCreated, allDepartments, all
  joiningDate: "",
  phoneNumber: "",
  branch: "Karachi",
- timeZone: "Asia/Karachi",
+ timeZone: "America/New_York",
  isTechnician: false,
  hourlyWage: "",
  };
@@ -278,8 +278,8 @@ const CreateUserModal = ({ isOpen, setIsOpen, onUserCreated, allDepartments, all
  value={formData.timeZone}
  onChange={handleChange}
  options={[
+ { value: "America/New_York", label: "America/New_York (Eastern US & Canada)" },
  { value: "Asia/Karachi", label: "Asia/Karachi" },
- { value: "America/New_York", label: "America/New_York" },
  { value: "Europe/London", label: "Europe/London" },
  ]}
  />

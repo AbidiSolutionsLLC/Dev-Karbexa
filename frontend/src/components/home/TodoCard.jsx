@@ -9,7 +9,6 @@ import {
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 
-import api from "../../axios";
 import EmptyCardState from "./EmptyCardState";
 import ModernDatePicker from "../ui/ModernDatePicker";
 import GlassModal from "../ui/GlassModal";
@@ -122,9 +121,10 @@ const ToDoCard = ({ onDelete, userId }) => {
  return () => document.removeEventListener("mousedown", handleClickOutside);
  }, []);
 
- useEffect(() => {
- return () => {
- Object.values(pendingDeleteRef.current).forEach(({ timeoutId, task }) => {
+useEffect(() => {
+  const pendingDelete = pendingDeleteRef.current;
+  return () => {
+  Object.values(pendingDelete).forEach(({ timeoutId, task }) => {
  clearTimeout(timeoutId);
  if (resolvedUserId && task?._id) {
  const todos = JSON.parse(localStorage.getItem(`todos_${resolvedUserId}`) || '[]');
@@ -179,23 +179,22 @@ const ToDoCard = ({ onDelete, userId }) => {
  const newTodo = { _id: Date.now().toString(), ...payload, completed: false, createdAt: new Date().toISOString() };
  const todos = JSON.parse(localStorage.getItem(`todos_${resolvedUserId}`) || '[]');
  todos.push(newTodo);
- localStorage.setItem(`todos_${resolvedUserId}`, JSON.stringify(todos));
- const newTodoData = newTodo;
- setTasks((prev) => [
+localStorage.setItem(`todos_${resolvedUserId}`, JSON.stringify(todos));
+  setTasks((prev) => [
  {
  ...newTodo,
  dueDate: formatDateInput(newTodo.dueDate),
  },
  ...prev,
  ]);
- resetAddModal();
- toast.success("Task added");
- } catch (error) {
- toast.error("Failed to add task");
- } finally {
- setSaving(false);
- }
- };
+resetAddModal();
+  toast.success("Task added");
+  } catch {
+  toast.error("Failed to add task");
+  } finally {
+  setSaving(false);
+  }
+  };
 
  const persistTaskUpdate = async (todoId, payload, optimisticUpdater) => {
  const previousTasks = tasks;
@@ -207,12 +206,11 @@ const ToDoCard = ({ onDelete, userId }) => {
  const index = todos.findIndex(t => t._id === todoId);
  let updatedTodo = payload;
  if (index !== -1) {
- todos[index] = { ...todos[index], ...payload };
- updatedTodo = todos[index];
- localStorage.setItem(`todos_${resolvedUserId}`, JSON.stringify(todos));
- }
- const updatedTodoData = updatedTodo;
- setTasks((prev) =>
+todos[index] = { ...todos[index], ...payload };
+  updatedTodo = todos[index];
+  localStorage.setItem(`todos_${resolvedUserId}`, JSON.stringify(todos));
+  }
+  setTasks((prev) =>
  prev.map((task) =>
  task._id === todoId
  ? {
@@ -414,10 +412,10 @@ const ToDoCard = ({ onDelete, userId }) => {
 
  <div className="relative bg-surface rounded-[1.2rem] shadow-md border border-amber-100 p-3 w-full h-full flex flex-col">
  {/* Header - Marked as shrink-0 so it stays fixed at top */}
- <div className="flex justify-between items-start mb-3 shrink-0">
+ <div className="flex justify-between items-start mb-2 shrink-0">
  <div>
  <div className="flex items-center gap-2 mb-1">
- <FiCheckSquare className="w-4 h-4 text-green-600 dark:text-green-400" />
+ <FiCheckSquare className="w-4 h-4 text-amber-600 dark:text-amber-400" />
  <h3 className="text-xs font-bold text-main uppercase tracking-tight">To-Do</h3>
  </div>
  <p className="text-[10px] font-medium text-muted">
@@ -451,7 +449,7 @@ const ToDoCard = ({ onDelete, userId }) => {
  </div>
 
  {/* Add Task Button */}
- <div className="shrink-0 mb-3">
+ <div className="shrink-0 mb-2">
  <button
  onClick={openAddModal}
  className="btn-ghost flex items-center gap-1.5"
@@ -462,15 +460,15 @@ const ToDoCard = ({ onDelete, userId }) => {
  </div>
 
  {/* Scrollable Task List Section */}
- <div className="overflow-y-auto flex-1 pr-1 max-h-[200px] custom-scrollbar">
+ <div className="overflow-y-auto flex-1 pr-1 max-h-[150px] custom-scrollbar min-h-0">
  {loading ? (
  <div className="text-[10px] text-muted py-6 text-center">Loading todos...</div>
  ) : sortedTasks.length > 0 ? (
- <ul className="space-y-2 text-[10px]">
+ <ul className="space-y-1.5 text-[10px]">
  {sortedTasks.map((task) => (
  <li
  key={task._id}
- className={`rounded-lg p-3 flex justify-between items-start gap-2 transition-all ${task.completed ? "bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-100" : "bg-[#E0E5EA]/30 border border-transparent"
+ className={`rounded-lg p-2 flex justify-between items-start gap-2 transition-all ${task.completed ? "bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-100" : "bg-[#E0E5EA]/30 border border-transparent"
  }`}
  >
  <div className="flex items-start gap-2.5 flex-1 min-w-0">

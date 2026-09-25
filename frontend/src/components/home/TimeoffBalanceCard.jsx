@@ -11,38 +11,52 @@ const TimeoffBalanceCard = ({ onDelete, userId }) => {
  const [loading, setLoading] = useState(true);
  const menuRef = useRef();
 
- useEffect(() => {
- const fetchLeaves = async () => {
- try {
- const response = await api.get(`/users/${userId}/leaves`);
- const leaves = response.data?.data || response.data;
- 
- const leaveTypes = [
- {
- type: "Paid Time Off (PTO)",
- remaining: `${leaves.pto || 0} days`,
- },
- {
- type: "Sick Leave",
- remaining: `${leaves.sick || 0} days`,
- },
- {
- type: "Majlis Leave",
- remaining: `${leaves.majlis || 0} days`,
- }
- ];
- 
- setTimeOffData(leaveTypes);
- } catch (error) {
- console.error("Error fetching leaves:", error);
- setTimeOffData([]);
- } finally {
- setLoading(false);
- }
- };
+useEffect(() => {
+  const fetchLeaves = async () => {
+  if (!userId) {
+  setLoading(false);
+  return;
+  }
+  try {
+  const response = await api.get(`/users/${userId}/leaves`);
+  const leaves = response.data?.data || response.data || {};
 
- fetchLeaves();
- }, [userId]);
+  const items = [
+  {
+  type: "Paid Time Off (PTO)",
+  remaining: `${leaves.pto ?? 0} days`,
+  },
+  {
+  type: "Sick Leave",
+  remaining: `${leaves.sick ?? 0} days`,
+  },
+  ];
+
+  if (leaves.majlis != null) {
+  items.push({
+  type: "Majlis Leave",
+  remaining: `${leaves.majlis} days`,
+  });
+  }
+
+  if (leaves.avalaibleLeaves != null) {
+  items.push({
+  type: "Total Available",
+  remaining: `${leaves.avalaibleLeaves} days`,
+  });
+  }
+
+  setTimeOffData(items);
+  } catch (error) {
+  console.error("Error fetching leaves:", error);
+  setTimeOffData([]);
+  } finally {
+  setLoading(false);
+  }
+  };
+
+  fetchLeaves();
+  }, [userId]);
 
  useEffect(() => {
  const handleClickOutside = (e) => {
@@ -56,7 +70,7 @@ const TimeoffBalanceCard = ({ onDelete, userId }) => {
 
  if (loading) {
  return (
- <div className="relative bg-surface rounded-[1.2rem] shadow-md border border-amber-100 p-4">
+ <div className="relative bg-surface rounded-[1.2rem] shadow-md border border-amber-100 p-3 h-full flex flex-col w-full">
  <div className="flex items-center gap-2 mb-3">
  <FiCalendar className="w-4 h-4 text-amber-600 dark:text-amber-400" />
  <h3 className="text-xs font-bold text-main uppercase tracking-tight">Available Leaves</h3>
@@ -67,9 +81,9 @@ const TimeoffBalanceCard = ({ onDelete, userId }) => {
  }
 
  return (
- <div className="relative bg-surface rounded-[1.2rem] shadow-md border border-amber-100 p-4">
+ <div className="relative bg-surface rounded-[1.2rem] shadow-md border border-amber-100 p-3 h-full flex flex-col w-full">
  {/* Header */}
- <div className="flex justify-between items-start mb-3">
+ <div className="flex justify-between items-start mb-2">
  <div>
  <div className="flex items-center gap-2 mb-1">
  <FiCalendar className="w-4 h-4 text-amber-600 dark:text-amber-400" />
@@ -107,14 +121,14 @@ const TimeoffBalanceCard = ({ onDelete, userId }) => {
  </div>
 
  {/* Leave types list */}
- <div className="max-h-[200px] overflow-y-auto w-full">
- {timeOffData.length > 0 ? (
- <ul className="space-y-2 text-[10px]">
- {timeOffData.map((item, index) => (
- <li
- key={index}
- className="bg-[#E0E5EA]/30 rounded-lg px-3 py-2 flex items-center justify-between gap-2"
- >
+<div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar max-h-[150px] w-full">
+  {timeOffData.length > 0 ? (
+  <ul className="space-y-1.5 text-[10px]">
+  {timeOffData.map((item, index) => (
+  <li
+  key={index}
+  className="bg-[#E0E5EA]/30 rounded-lg px-2.5 py-1.5 flex items-center justify-between gap-2"
+  >
  <div className="min-w-0 flex-1">
  <span className="font-medium text-main">{item.type}</span>
  <div className="text-[9px] text-muted">{item.remaining}</div>

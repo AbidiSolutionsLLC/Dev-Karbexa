@@ -112,6 +112,15 @@ class LeaveService {
       console.error('[Notification] Leave request submitted:', notifErr.message);
     }
 
+    require("./activityLogService").recordActivity({
+      actorId: user._id,
+      action: `submitted a ${leaveType} leave request`,
+      entityType: "leave",
+      entityId: savedLeaveRequest._id,
+      companyId,
+      level: "info",
+    }).catch(() => {});
+
     return savedLeaveRequest;
   }
 
@@ -191,11 +200,14 @@ class LeaveService {
         baseQuery.company = companyId;
     }
 
+    const featureQuery = { ...query };
+    delete featureQuery.my;
+
     const features = new APIFeatures(
       LeaveRequest.find(baseQuery)
         .populate('employee', 'name email avatar department')
         .populate('responses.author', 'name email avatar role'),
-      query
+      featureQuery
     )
       .filter()
       .search(['employeeName', 'reason', 'leaveType'])

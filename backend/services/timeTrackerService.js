@@ -185,6 +185,14 @@ class TimeTrackerService {
       throw new BadRequestError(`You have already completed your check-in for today (${timezone}).`);
     }
 
+    require("./activityLogService").recordActivity({
+      actorId: userId,
+      action: "checked in",
+      entityType: "timetracker",
+      entityId: newLog._id,
+      companyId,
+    }).catch(() => {});
+
     return { message: `${previousSessionMsg}Checked in successfully.`, log: newLog };
   }
 
@@ -224,6 +232,21 @@ class TimeTrackerService {
     }
     
     if (!returnLog) throw new BadRequestError("Corrupted check-in data. Session cleared.");
+
+    try {
+      const userDoc = await User.findById(userId).select('company');
+      require("./activityLogService").recordActivity({
+        actorId: userId,
+        action: "checked out",
+        entityType: "timetracker",
+        entityId: returnLog._id,
+        companyId: userDoc ? userDoc.company : null,
+        level: "success",
+      }).catch(() => {});
+    } catch (activityErr) {
+      console.error("[ActivityLog] check-out record failed:", activityErr.message);
+    }
+
     return returnLog;
   }
 

@@ -42,7 +42,7 @@ exports.onboardCompany = catchAsync(async (req, res) => {
     azureClientId: azureClientId || null,
     emailConfig: emailConfig || { provider: "Default" },
     maxUsers: maxUsers || 50,
-    timezone: timezone || "UTC",
+    timezone: timezone || "America/New_York",
     currency: currency || "USD",
     isMasterTenant: false
   });
