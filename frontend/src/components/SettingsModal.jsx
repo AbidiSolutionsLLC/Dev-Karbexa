@@ -78,6 +78,21 @@ const formatProjectRoleDisplay = (role) => {
   return "Team Member";
 };
 
+const getEffectiveProjectRole = (user) => {
+  if (!user) return null;
+  // 1. Explicit Project Portal role takes top precedence
+  if (user.projectRole) {
+    return formatProjectRoleDisplay(user.projectRole);
+  }
+  // 2. Company-wide Super Admin & Admin default to Project Administrator
+  const companyRole = (user.role || "").replace(/\s+/g, "").toLowerCase();
+  if (companyRole === "superadmin" || companyRole === "admin") {
+    return "Project Administrator";
+  }
+  // 3. Fallback: normalize company role
+  return formatProjectRoleDisplay(user.role) || "Team Member";
+};
+
 const THEME_OPTIONS = [
   { id: "light", label: "Light", icon: Sun },
   { id: "dark", label: "Dark", icon: Moon },
@@ -649,15 +664,15 @@ export default function SettingsModal({ isOpen, onClose }) {
                   const assignedUsers = portalUsers.filter(isAssigned);
 
                   // Role breakdown metrics
-                  const adminCount = assignedUsers.filter((u) => formatProjectRoleDisplay(u.projectRole) === "Project Administrator").length;
+                  const adminCount = assignedUsers.filter((u) => getEffectiveProjectRole(u) === "Project Administrator").length;
 
-                  const managerCount = assignedUsers.filter((u) => formatProjectRoleDisplay(u.projectRole) === "Project Manager").length;
+                  const managerCount = assignedUsers.filter((u) => getEffectiveProjectRole(u) === "Project Manager").length;
 
-                  const memberCount = assignedUsers.filter((u) => formatProjectRoleDisplay(u.projectRole) === "Team Member").length;
+                  const memberCount = assignedUsers.filter((u) => getEffectiveProjectRole(u) === "Team Member").length;
 
                   // Filtered users for table
                   const filteredUsers = assignedUsers.filter((u) => {
-                    const currentProjectRole = formatProjectRoleDisplay(u.projectRole);
+                    const currentProjectRole = getEffectiveProjectRole(u);
 
                     if (roleFilter === "admin" && currentProjectRole !== "Project Administrator") return false;
                     if (roleFilter === "manager" && currentProjectRole !== "Project Manager") return false;
@@ -828,9 +843,9 @@ export default function SettingsModal({ isOpen, onClose }) {
                                           const isCurrentSelected = uId === selectedUserId;
                                           const cleanRole = (u.role || "").replace(/\s+/g, "").toLowerCase();
                                           const isCompanyAdmin = cleanRole === "superadmin" || cleanRole === "admin";
-                                          const activeProjectRole = u.projectRole 
-                                            ? formatProjectRoleDisplay(u.projectRole) 
-                                            : (isCompanyAdmin ? "Project Administrator" : (u.hasProjectPortalAccess ? "Team Member" : null));
+                                          const activeProjectRole = (u.hasProjectPortalAccess || u.projectRole || isCompanyAdmin)
+                                            ? getEffectiveProjectRole(u)
+                                            : null;
 
                                           return (
                                             <div
@@ -838,7 +853,7 @@ export default function SettingsModal({ isOpen, onClose }) {
                                               onClick={(e) => {
                                                 e.stopPropagation();
                                                 setSelectedUserId(uId);
-                                                setSelectedRole(u.projectRole ? formatProjectRoleDisplay(u.projectRole) : "Team Member");
+                                                setSelectedRole(getEffectiveProjectRole(u) || "Team Member");
                                                 setUserDropdownOpen(false);
                                               }}
                                               className={"flex items-center justify-between p-2 rounded-xl cursor-pointer transition-colors " + (
@@ -1040,7 +1055,7 @@ export default function SettingsModal({ isOpen, onClose }) {
                             const uId = u._id || u.id;
                             const cleanCompanyRole = (u.role || "").replace(/\s+/g, "").toLowerCase();
                             const isCompanyAdmin = cleanCompanyRole === "superadmin" || cleanCompanyRole === "admin";
-                            const currentProjectRole = formatProjectRoleDisplay(u.projectRole) || "Team Member";
+                            const currentProjectRole = getEffectiveProjectRole(u) || "Team Member";
                             const isSaving = savingUserId === uId;
 
                             return (

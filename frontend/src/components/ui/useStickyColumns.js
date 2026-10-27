@@ -71,6 +71,7 @@ export default function useStickyColumns(columns, stickyColumnKey) {
       position: "sticky",
       left: index === 0 ? 0 : firstWidth,
       zIndex: header ? 20 : 10,
+      isolation: "isolate",
     };
 
     /* Shadow only on the last frozen column — that is the frozen edge. */

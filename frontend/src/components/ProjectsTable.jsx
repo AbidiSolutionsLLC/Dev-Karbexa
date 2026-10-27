@@ -38,13 +38,21 @@ const ProjectsTable = ({
  });
  };
 
- // Function to decide color based on completion
- const projectColumns = [
- {
- key: "projectID",
- label: "ID",
- render: (val, project) => <TableText value={val || project._id?.slice(-6).toUpperCase()} muted />
- },
+// Function to decide color based on completion
+  const projectColumns = [
+  {
+  key: "__index",
+  label: "S.No.",
+  sortable: false,
+  type: "index",
+  width: 56,
+  hideBelow: "sm",
+  },
+  {
+  key: "projectID",
+  label: "ID",
+  render: (val, project) => <TableText value={val || project._id?.slice(-6).toUpperCase()} muted />
+  },
  {
  key: "title",
  label: "Project Name",

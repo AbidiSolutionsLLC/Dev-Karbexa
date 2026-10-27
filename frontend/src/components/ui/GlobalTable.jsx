@@ -204,14 +204,17 @@ export default function GlobalTable({
   const headerThClass = (extra = "") =>
     `px-3 sm:px-4 py-3 text-[10px] font-black uppercase tracking-[0.08em] whitespace-nowrap ${extra}`;
 
-  const cellClass = (col) => {
+  const cellClass = (col, isSticky = false) => {
     const align = ALIGN_CLASS[col.align || (col.group ? "center" : "left")];
     const base = col.group
       ? `px-3 sm:px-4 py-3.5 whitespace-nowrap tabular-nums ${align} ${
           dividerKeys.has(col.key) ? "border-l border-border-subtle" : ""
         }`
       : `px-3 sm:px-4 py-3.5 ${align} tabular-nums`;
-    return `${base} bg-app group-hover:bg-card-hover ${col.className || ""} ${responsiveCls(col)}`;
+    if (isSticky) {
+      return `${base} bg-app transition-colors ${col.className || ""} ${responsiveCls(col)}`;
+    }
+    return `${base} transition-colors group-hover:bg-card-hover ${col.className || ""} ${responsiveCls(col)}`;
   };
 
   const rowKey = (row, idx) =>
@@ -320,7 +323,7 @@ export default function GlobalTable({
             style={{ "--sticky-col-1-width": "60px" }}
           >
             {theadNode}
-            <tbody className="divide-y divide-border-subtle bg-app">
+<tbody className="divide-y divide-border-subtle">
               {Array.from({ length: Math.min(rowsPerPage, 6) }).map((_, rIdx) => (
                 <tr key={`sk-${rIdx}`}>
                   {columns.map((col, cIdx) => (
@@ -370,7 +373,7 @@ export default function GlobalTable({
           style={{ "--sticky-col-1-width": "60px" }}
         >
           {theadNode}
-          <tbody className="divide-y divide-border-subtle bg-app">
+          <tbody className="divide-y divide-border-subtle">
             {pageRows.length > 0 ? (
               pageRows.map((row, idx) => (
                 <tr
@@ -384,7 +387,7 @@ export default function GlobalTable({
                   {columns.map((col, colIdx) => (
                     <td
                       key={col.key}
-                      className={`${cellClass(col)} ${
+                      className={`${cellClass(col, isSticky(col.key))} ${
                         colIdx === 0
                           ? "border-l-2 border-transparent transition-colors group-hover:border-brand"
                           : ""
@@ -404,7 +407,7 @@ export default function GlobalTable({
                     </td>
                   ))}
                   {actions.length > 0 && (
-                    <td className="px-3 sm:px-4 py-3.5 whitespace-nowrap text-right bg-app group-hover:bg-card-hover">
+                    <td className="px-3 sm:px-4 py-3.5 whitespace-nowrap text-right transition-colors group-hover:bg-card-hover">
                       <div className="flex items-center justify-end gap-1.5">
                         {actions.map((action, aIdx) => {
                           const isDisabled =
